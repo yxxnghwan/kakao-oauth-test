@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+    <p id="kakaoAccessToken">kakaoAccessToken : </p>
+    <p id="kakaoId">kakaoId: </p>
+    <p id="email">email: </p>
+    <p id="nickName">nickName: </p>
+    <img id="profileImage">
+    <button type="button" onclick="requestToken()">토큰 요청</button>
+    <button type="button" onclick="getKakaoMemberInfo()">사용자 정보 요청</button>
+    <button type="button" onclick="postMember()">서버에 저장</button>
+    <button type="button" onclick="unlink()">내편 탈퇴할거임</button>
+</body>
+
+<script>
+    /*<![CDATA[*/
+    const REDIRECT_URI = 'http://localhost:8080/receiveToken'
+    const REST_API_KEY = "[[${kakaoKey}]]"
+    const AUTHORIZE_CODE = "[[${code}]]"
+    let accessToken;
+    let kakaoId;
+    let email;
+    let nickName;
+    /*]]>*/
+    const requestToken = () => {
+        fetch(`https://kauth.kakao.com/oauth/token?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&code=${AUTHORIZE_CODE}&grant_type=authorization_code`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+        }).then(async response => {
+            let tokenData = await response.json();
+            console.log(tokenData);
+            accessToken = tokenData.access_token;
+
+            document.getElementById("kakaoAccessToken").innerHTML = `kakaoAccessToken : ${accessToken}`
+        })
+    }
+
+    const getKakaoMemberInfo = () => {
+        fetch(`https://kapi.kakao.com/v2/user/me?secure_resource=true&property_keys=["kakao_account.profile","kakao_account.email","kakao_account.gender"]`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+                "Authorization": `Bearer ${accessToken}`
+            }
+        }).then(async response1 => {
+            let kakaoMember = await response1.json();
+            console.log(kakaoMember);
+            kakaoId = kakaoMember.id;
+            email = kakaoMember.kakao_account.email;
+            nickName = kakaoMember.kakao_account.profile.nickname;
+            document.getElementById("kakaoId").innerHTML = `kakaoId : ${kakaoId}`
+            document.getElementById("email").innerHTML = `email : ${email}`
+            document.getElementById("nickName").innerHTML = `nickName : ${nickName}`
+            document.getElementById("profileImage").src = kakaoMember.kakao_account.profile.thumbnail_image_url;
+        })
+    }
+
+    const postMember = () => {
+        fetch(`/member`, {
+            method: "POST",
+            body: JSON.stringify({
+                oauthId: kakaoId,
+                username: nickName,
+                oauthType: "KAKAO"
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            }
+        }).then(async response => {
+            if (response.ok) {
+                alert("멤버 추가 완료 ㅎㅎ DB 확인점")
+            }
+        })
+    }
+
+    const unlink = () => {
+        fetch(`https://kapi.kakao.com/v1/user/unlink`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`
+            }
+        }).then(async response => {
+            let data = await response.json();
+            console.log(data);
+            location.replace("http://localhost:8080/requestKakaoLogin");
+        })
+    }
+</script>
+</html>
+

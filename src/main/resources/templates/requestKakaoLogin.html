@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <button type="button" onclick="requestKakaoLogin()">카카오 로그인 요청버튼 ^^</button>
+</body>
+
+<script>
+    /*<![CDATA[*/
+    const REDIRECT_URI = 'http://localhost:8080/receiveToken'
+    const REST_API_KEY = "[[${kakaoKey}]]"
+    /*]]>*/
+    const requestKakaoLogin = () => {
+        location.href = `https://kauth.kakao.com/oauth/authorize?client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&response_type=code`;
+    }
+</script>
+</html>
+
